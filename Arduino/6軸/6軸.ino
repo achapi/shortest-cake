@@ -11,7 +11,7 @@ void setup() {
   Wire.write(MPU6050_PWR_MGMT_1);
   Wire.write(0x00);
   Wire.endTransmission();
-  MadgwickFilter.begin(100);
+  MadgwickFilter.begin(700);
 }
 
 void loop() {
