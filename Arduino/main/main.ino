@@ -12,6 +12,14 @@
 #define pwmD 4
 #define pwmC 5
 //CとDが入れ替わっているのは仕様
+#define TRIG 44
+#define ECHO 45
+#define swap(type, a, b) \
+  { \
+    type temp = a; \
+    a = b; \
+    b = temp; \
+  }
 void motor(int m, int power = 0) {
   /*
      これはモーターを動かす関数であります。
@@ -32,6 +40,24 @@ void motor(int m, int power = 0) {
     analogWrite(pwm[m - 1], abs(power));
   }
   return;
+}
+
+double getDistance() {
+  double duration = 0;
+  double distance = 0;
+  const double speed_of_sound = 331.5 + 0.6 * 25;  // 25℃の気温の想定
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+  duration = pulseIn(ECHO, HIGH);  // 往復にかかった時間が返却される[マイクロ秒]
+
+  if (duration > 0) {
+    duration = duration / 2;  // 往路にかかった時間
+    distance = duration * speed_of_sound * 100 / 1000000;
+  }
+  return distance;
 }
 
 void stopMotor() {
@@ -88,6 +114,12 @@ double nineAxis() {
   return diff;
 }
 
+void rotate(int speed) {
+  motor(1, speed);
+  motor(2, speed);
+  motor(3, speed);
+  motor(4, speed);
+}
 
 void checkMotorDebug() {
   //モーター1,2,3,4がどれか分かんなくなった用
@@ -118,6 +150,9 @@ void setup() {
   pinMode(pinD1, OUTPUT);
   pinMode(pinD2, OUTPUT);
   pinMode(pwmD, OUTPUT);
+  Serial.begin(9600);
+  pinMode(ECHO, INPUT);
+  pinMode(TRIG, OUTPUT);
 }
 void move(int speed, int r) {
   /*モーターを任意の角度に動かします。
@@ -131,6 +166,38 @@ void move(int speed, int r) {
   motor(3, speed * sin(rad - M_PI * 5 / 4));
   motor(4, speed * sin(rad - M_PI * 7 / 4));
 }
+int k = 0;
+double dis[10];
 void loop() {
-  //checkMotorDebug();
+  /*
+  checkMotorDebug();
+  return;
+  */
+
+  int n = 10;
+  if (k < n) {
+    double d = getDistance();
+    dis[k] = d;
+    k++;
+  } else {
+    for (int i = 0; i < n - 1; i++) {
+      for (int j = i + 1; j < n; j++) {
+        if (dis[i] > dis[j]) {
+          swap(double, dis[i], dis[j]);
+        }
+      }
+    }
+    for (int i = 0; i < n; i++) {
+      Serial.print(dis[i]);
+      Serial.print(" ");
+    }
+    double dis_medium = (dis[4] + dis[5]) / 2;
+    Serial.println(dis_medium);
+    if (dis_medium < 40.0) {
+      rotate(100);
+    } else {
+      move(100, 0);
+    }
+    k = 0;
+  }
 }
