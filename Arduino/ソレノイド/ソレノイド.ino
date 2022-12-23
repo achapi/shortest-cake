@@ -5,13 +5,8 @@ void setup() {
 }
 
 void loop() {
-  if (digitalRead(3)==LOW) {
-    digitalWrite(2, HIGH);
-    delay(20);
-    digitalWrite(2, LOW);
-    delay(1000);
-    while(digitalRead(3)==LOW);
-  }else{
-    digitalWrite(2, LOW);
-  }
+  digitalWrite(2, HIGH);
+  delay(20);
+  digitalWrite(2, LOW);
+  delay(500);
 }
